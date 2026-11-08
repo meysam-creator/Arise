@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="theme-color" content="#070b14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ARISE // Persönliches System</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN-SYSTEM & VARIABLEN (Dunkles System-UI, hohe Lesbarkeit)
+       ========================================================================== */
+    :root {
+      --bg-base: #060a12;
+      --bg-card: #0c1424;
+      --bg-card-elevated: #121e36;
+      --bg-input: #080e1a;
+      --border-subtle: #1e3358;
+      --border-glow: #00e5ff;
+      --accent-primary: #00e5ff;
+      --accent-secondary: #0099cc;
+      --accent-soft: rgba(0, 229, 255, 0.12);
+      --text-main: #f0f6fc;
+      --text-muted: #8b9eb7;
+      --success: #00e676;
+      --warning: #ffbe0b;
+      --danger: #ff4d6d;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --nav-height: 70px;
+      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+      --shadow-system: 0 4px 20px rgba(0, 0, 0, 0.65), 0 0 12px rgba(0, 229, 255, 0.06);
+      --transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 60%),
+        linear-gradient(180deg, #060a12 0%, #09101d 100%);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding-bottom: calc(var(--nav-height) + 28px);
+      overflow-x: hidden;
+    }
+
+    /* ==========================================================================
+       2. OBkOPFLEISTE & STATUSANZEIGE
+       ========================================================================== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(6, 10, 18, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-Group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .system-orb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      box-shadow: 0 0 10px var(--accent-primary);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--accent-primary);
+      font-family: var(--font-mono);
+      letter-spacing: 1px;
+      display: block;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Speichern-Indikator */
+    .save-toast {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--success);
+      background: rgba(0, 230, 118, 0.12);
+      border: 1px solid rgba(0, 230, 118, 0.35);
+      padding: 4px 10px;
+      border-radius: 99px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity var(--transition), transform var(--transition);
+      pointer-events: none;
+    }
+
+    .save-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .icon-btn {
+      min-width: 48px;
+      min-height: 48px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .icon-btn:active, .icon-btn.active {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+    }
+
+    /* ==========================================================================
+       3. LAYOUT & SYSTEM-KARTEN
+       ========================================================================== */
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .view-section {
+      display: none;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sys-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-system);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sys-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-primary);
+      opacity: 0.7;
+    }
+
+    .sys-card.card-highlight {
+      border-color: rgba(0, 229, 255, 0.45);
+      background: linear-gradient(145deg, #0d182c 0%, #091120 100%);
+    }
+
+    .sys-card.card-warning::before {
+      background: var(--warning);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .sys-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       4. XP-BALKEN, BADGES & STATUS
+       ========================================================================== */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .status-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .status-box-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .status-box-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    .xp-wrapper {
+      margin-top: 12px;
+    }
+
+    .xp-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .xp-bar-bg {
+      width: 100%;
+      height: 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 99px;
+      overflow: hidden;
+      padding: 2px;
+    }
+
+    .xp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.4s ease;
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    .badge-success {
+      background: rgba(0, 230, 118, 0.12);
+      color: var(--success);
+      border-color: rgba(0, 230, 118, 0.35);
+    }
+
+    .badge-warn {
+      background: rgba(255, 190, 11, 0.12);
+      color: var(--warning);
+      border-color: rgba(255, 190, 11, 0.35);
+    }
+
+    /* ==========================================================================
+       5. FORMULARE, EINGABEFELDER & BUTTONS (>= 48px Touch-Target)
+       ========================================================================== */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      min-height: 48px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 1rem;
+      font-family: var(--font-sans);
+      padding: 10px 14px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.2);
+    }
+
+    .btn {
+      min-height: 50px;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      transition: transform 0.1s ease, background var(--transition), border-color var(--transition);
+      text-align: center;
+    }
+
+    .btn:active {
+      transform: scale(0.99);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00b4d8 0%, #00e5ff 100%);
+      color: #030914;
+      box-shadow: 0 4px 15px rgba(0, 229, 255, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-elevated);
+      color: var(--text-main);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .btn-success {
+      background: rgba(0, 230, 118, 0.18);
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .btn-danger {
+      background: rgba(255, 77, 109, 0.15);
+      color: var(--danger);
+      border-color: rgba(255, 77, 109, 0.5);
+    }
+
+    .btn-sm {
+      min-height: 48px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      width: auto;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Schnelle +/- Stepper Buttons für das Training im Gym */
+    .stepper-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stepper-btn {
+      min-width: 48px;
+      min-height: 48px;
+      background: var(--bg-card-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--accent-primary);
+      font-size: 1.25rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       6. LISTEN, QUESTS & TRAININGSSÄTZE
+       ========================================================================== */
+    .quest-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quest-item.done {
+      opacity: 0.65;
+      border-color: rgba(0, 230, 118, 0.4);
+    }
+
+    .quest-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .quest-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .quest-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .set-row {
+      display: flex;
+       justify-content: space-between;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      margin-bottom: 8px;
+    }
+
+    .set-info {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+    }
+
+    /* Pause-Timer Leiste */
+    .timer-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: center;
+      margin: 14px 0;
+    }
+
+    .timer-display {
+      font-family: var(--font-mono);
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent-primary);
+      letter-spacing: 2px;
+      margin: 6px 0;
+    }
+
+    /* ==========================================================================
+       7. UNTERE NAVIGATION (Maximal 5 Hauptbereiche, >= 48px Höhe)
+       ========================================================================== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: rgba(8, 14, 26, 0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-subtle);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      z-index: 200;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 48px;
+      transition: color var(--transition);
+      position: relative;
+    }
+
+    .nav-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .nav-btn.active {
+      color: var(--accent-primary);
+    }
+
+    .nav-btn.active::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 32px;
+      height: 3px;
+      background: var(--accent-primary);
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 0 8px var(--accent-primary);
+    }
+
+    /* ==========================================================================
+       8. MODAL / SYSTEM-MELDUNG
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 6, 12, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-window {
+      background: var(--bg-card);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-md);
+      max-width: 440px;
+      width: 100%;
+      padding: 20px;
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+    }
+
+    .text-muted { color: var(--text-muted); font-size: 0.9rem; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 14px; }
+    .mb-2 { margin-bottom: 8px; }
+    .divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 14px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       KOPFLEISTE MIT SPEICHER-STATUS & EINSTELLUNGEN-BUTTON
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="brand-Group">
+      <span class="system-orb"></span>
+      <div>
+        <span class="brand-title">ARISE</span>
+        <span class="brand-sub" id="header-rank-display">SYSTEM BEREIT</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div id="save-indicator" class="save-toast" role="status" aria-live="polite">Automatisch gespeichert</div>
+      <button type="button" class="icon-btn" id="btn-open-settings" title="Einstellungen & Backup" aria-label="Einstellungen öffnen">
+        &#9881;
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ======================================================================
+         1. BEREICH: SYSTEM (STARTSEITE)
+         ====================================================================== -->
+    <section id="view-system" class="view-section active" aria-label="System Startbildschirm">
+      
+      <!-- Spieler-Statusfenster -->
+      <div class="sys-card card-highlight">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">STATUSFENSTER</span>
+            <h1 class="card-title" id="sys-player-name">Jäger</h1>
+          </div>
+          <span class="badge" id="sys-level-badge">LEVEL 1</span>
+        </div>
+
+        <p class="text-muted" id="sys-welcome-msg">Willkommen zurück. Dein heutiger Fokus liegt auf beständigem Fortschritt.</p>
+
+        <div class="status-grid">
+          <div class="status-box">
+            <span class="status-box-label">Rang</span>
+            <div class="status-box-value" id="sys-rank">Einsteiger</div>
+          </div>
+          <div class="status-box">
+            <span class="status-box-label">Klasse</span>
+            <div class="status-box-value" id="sys-class">Allrounder</div>
+          </div>
+          <div class="status-box">
+            <span class="status-box-label">Aktiver Titel</span>
+            <div class="status-box-value" id="sys-title">Erste Schritte</div>
+          </div>
+          <div class="status-box">
+            <span class="status-box-label">Workouts gesamt</span>
+            <div class="status-box-value" id="sys-total-workouts">0</div>
+          </div>
+        </div>
+
+        <!-- XP-Fortschrittsbalken -->
+        <div class="xp-wrapper">
+          <div class="xp-meta">
+            <span>FORTSCHRITT</span>
+            <span id="sys-xp-text">0 / 200 XP</span>
+          </div>
+          <div class="xp-bar-bg">
+            <div class="xp-bar-fill" id="sys-xp-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wiedereinstiegsmodus-Banner (für Krankheit, Verletzung oder wenig Zeit) -->
+      <div class="sys-card card-warning" id="recovery-banner" style="display: none;">
+        <div class="card-header">
+          <span class="sys-label" style="color: var(--warning);">SCHON- &amp; WIEDEREINSTIEGSMODUS AKTIV</span>
+          <span class="badge badge-warn">Kein Druck</span>
+        </div>
+        <p class="text-muted">Gesundheit und Erholung gehen vor. Deine Ziele sind heute auf leichte Bewegung und Mobilität angepasst. Es geht kein Fortschritt verloren.</p>
+      </div>
+
+      <!-- Heutige Hauptaufgabe & Primärer Call-to-Action -->
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">HEUTIGE EINHEIT</span>
+            <h2 class="card-title" id="sys-today-plan-title">Kein Plan gewählt</h2>
+          </div>
+          <span class="badge" id="sys-today-day-badge">Bereit</span>
+        </div>
+        <p class="text-muted mb-2" id="sys-today-exercises-preview">Wähle oder starte dein Training direkt im Log.</p>
+        
+        <button type="button" class="btn btn-primary mt-2" id="btn-hero-start-workout">
+          &#9654; Training starten
+        </button>
+      </div>
+
+      <!-- Tagesquests (pausierbar, verschiebbar, vereinfachbar - ohne Strafen) -->
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">TAGESAUFGABEN</span>
+            <h2 class="card-title">Tägliche Routine</h2>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-recovery">
+            Wiedereinstieg
+          </button>
+        </div>
+        <p class="text-muted mb-2">Jede erledigte Aufgabe bringt +25 XP. Du kannst Aufgaben jederzeit leichter machen oder pausieren.</p>
+        <div id="daily-quests-list"></div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         2. BEREICH: TRAINING (TRAININGSLOG & LIVE-TIMER)
+         ====================================================================== -->
+    <section id="view-training" class="view-section" aria-label="Trainingslog">
+      
+      <div class="sys-card card-highlight">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">AKTIVE SITZUNG</span>
+            <h2 class="card-title" id="workout-session-title">Freies Training</h2>
+          </div>
+          <span class="badge" id="workout-sets-counter">0 Sätze</span>
+        </div>
+
+        <div class="form-group">
+          <label for="input-workout-note">Name der Einheit / Fokus</label>
+          <input type="text" id="input-workout-note" placeholder="z. B. Oberkörper / PushTag">
+        </div>
+
+        <!-- Übungsauswahl oder eigene Eingabe -->
+        <div class="form-group">
+          <label for="select-exercise">Übung aus Plan / Liste wählen</label>
+          <select id="select-exercise"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="input-custom-exercise">Oder Übung direkt eingeben</label>
+          <input type="text" id="input-custom-exercise" placeholder="z. B. Bankdrücken, Klimmzüge ...">
+        </div>
+
+        <!-- Anzeige der letzten gespeicherten Leistung derselben Übung -->
+        <div class="status-box mb-2" id="last-performance-box">
+          <span class="status-box-label">Letzte gespeicherte Leistung für diese Übung:</span>
+          <div class="status-box-value" id="last-performance-text" style="color: var(--accent-primary); font-family: var(--font-mono);">
+            Noch kein Eintrag vorhanden
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Schnelleingabe für Gewicht, Wiederholungen & Sätze -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-weight">Gewicht (kg)</label>
+            <div class="stepper-wrap">
+              <button type="button" class="stepper-btn" data-step-target="input-weight" data-step="-2.5">-</button>
+              <input type="number" id="input-weight" step="0.5" min="0" max="1000" value="40" inputmode="decimal">
+              <button type="button" class="stepper-btn" data-step-target="input-weight" data-step="2.5">+</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="input-reps">Wiederholungen</label>
+            <div class="stepper-wrap">
+              <button type="button" class="stepper-btn" data-step-target="input-reps" data-step="-1">-</button>
+              <input type="number" id="input-reps" step="1" min="1" max="500" value="10" inputmode="numeric">
+              <button type="button" class="stepper-btn" data-step-target="input-reps" data-step="1">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-sets-count">Anzahl Sätze auf einmal hinzufügen</label>
+          <div class="stepper-wrap">
+            <button type="button" class="stepper-btn" data-step-target="input-sets-count" data-step="-1">-</button>
+            <input type="number" id="input-sets-count" step="1" min="1" max="20" value="1" inputmode="numeric">
+            <button type="button" class="stepper-btn" data-step-target="input-sets-count" data-step="1">+</button>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="btn-add-set">
+          + Satz speichern
+        </button>
+      </div>
+
+      <!-- Integrierter Pausen-Timer -->
+      <div class="sys-card">
+        <div class="card-header">
+          <span class="sys-label">PAUSEN-TIMER</span>
+          <span class="badge" id="timer-status-badge">Bereit</span>
+        </div>
+        <div class="timer-box">
+          <div class="timer-display" id="timer-display">01:30</div>
+          <div class="btn-group" style="justify-content: center; margin-top: 10px;">
+            <button type="button" class="btn btn-secondary btn-sm" data-timer-set="60">60s</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-timer-set="90">90s</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-timer-set="120">120s</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-timer-set="180">180s</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-timer-toggle">Start / Pause</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-timer-reset">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gespeicherte Sätze des aktuellen Workouts -->
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">PROTOKOLL</span>
+            <h2 class="card-title">Heutige Sätze</h2>
+          </div>
+          <button type="button" class="btn btn-danger btn-sm" id="btn-clear-draft">Leeren</button>
+        </div>
+
+        <div id="active-sets-list"></div>
+
+        <div class="divider"></div>
+
+        <button type="button" class="btn btn-success" id="btn-finish-workout">
+          &#10003; Trainingseinheit abschließen (+XP)
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         3. BEREICH: TRAININGSPLAN
+         ====================================================================== -->
+    <section id="view-plan" class="view-section" aria-label="Trainingspläne">
+      
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">STRATEGIE</span>
+            <h2 class="card-title">Vorlagen &amp; Pläne</h2>
+          </div>
+        </div>
+        <p class="text-muted mb-2">Erstelle schnell einen Plan aus einer Vorlage oder baue deinen eigenen Split.</p>
+        <div class="btn-group">
+          <button type="button" class="btn btn-secondary btn-sm" data-template="gk">+ Ganzkörper</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-template="ppl">+ Push Pull Legs</button>
+          <button type="button" class="btn btn-outline btn-sm" data-template="custom">+ Eigener Plan</button>
+        </div>
+      </div>
+
+      <!-- Liste aller gespeicherten Pläne -->
+      <div id="plans-container"></div>
+
+      <!-- Editor zum Bearbeiten eines ausgewählten Plans -->
+      <div class="sys-card card-highlight" id="plan-editor-card" style="display: none;">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">PLAN BEARBEITEN</span>
+            <h2 class="card-title" id="editor-plan-heading">Plan anpassen</h2>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-close-plan-editor">Schließen</button>
+        </div>
+
+        <div class="form-group">
+          <label for="input-plan-name">Name des Trainingsplans</label>
+          <input type="text" id="input-plan-name" placeholder="z. B. Mein 4er Split">
+        </div>
+
+        <div class="form-group">
+          <label for="select-plan-day">Trainingstag auswählen</label>
+          <select id="select-plan-day"></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-day-label">Bezeichnung des Tages</label>
+            <input type="text" id="input-day-label" placeholder="z. B. Tag A - Push">
+          </div>
+          <div class="form-group" style="display: flex; align-items: flex-end; gap: 6px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-plan-day">+ Tag</button>
+            <button type="button" class="btn btn-danger btn-sm" id="btn-remove-plan-day">Tag löschen</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <label>Übungen an diesem Tag (Sortieren &amp; Verwalten)</label>
+        <div id="plan-day-exercises-list" class="mb-2"></div>
+
+        <div class="form-row">
+          <input type="text" id="input-new-plan-exercise" placeholder="Neue Übung hinzufügen ...">
+          <button type="button" class="btn btn-primary" id="btn-add-plan-exercise">+ Hinzufügen</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         4. BEREICH: VERLAUF & BESTLEISTUNGEN
+         ====================================================================== -->
+    <section id="view-history" class="view-section" aria-label="Trainingsverlauf">
+      
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">REKORDE</span>
+            <h2 class="card-title">Persönliche Bestleistungen</h2>
+          </div>
+        </div>
+        <div id="pr-list-container"></div>
+      </div>
+
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">CHRONIK</span>
+            <h2 class="card-title">Abgeschlossene Workouts</h2>
+          </div>
+        </div>
+        <div id="workout-history-container"></div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         5. BEREICH: ABENTEUER (DUNGEONS, BEGLEITER, KLASSEN & TITEL)
+         ====================================================================== -->
+    <section id="view-adventure" class="view-section" aria-label="Abenteuer und Freischaltungen">
+      
+      <!-- Klassen & Titel Auswahl -->
+      <div class="sys-card card-highlight">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">SPEZIALISIERUNG</span>
+            <h2 class="card-title">Klasse &amp; Titel wählen</h2>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="select-player-class">Deine Klasse (bestimmt deinen Stil)</label>
+          <select id="select-player-class">
+            <option value="Allrounder">Allrounder (Ausgewogene Kraft &amp; Ausdauer)</option>
+            <option value="Wächter">Wächter (Fokus auf schwere Grundübungen)</option>
+            <option value="Läufer">Läufer (Fokus auf Ausdauer &amp; hohes Tempo)</option>
+            <option value="Pfadfinder">Pfadfinder (Vielseitigkeit &amp; Körpergewicht)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-player-title">Freigeschaltete Titel</label>
+          <select id="select-player-title"></select>
+        </div>
+      </div>
+
+      <!-- Eigene Dungeons (Mehrwöchige Trainingsprogramme) -->
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">EXPEDITIONEN</span>
+            <h2 class="card-title">Trainings-Dungeons</h2>
+          </div>
+        </div>
+        <p class="text-muted mb-2">Mehrwöchige Programme ohne Zeitdruck. Jedes abgeschlossene Workout bringt dich im aktiven Dungeon weiter.</p>
+        <div id="dungeons-list"></div>
+      </div>
+
+      <!-- Begleiter (Freischaltbar durch Trainingsabschnitte) -->
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">GARNISON</span>
+            <h2 class="card-title">Treue Begleiter</h2>
+          </div>
+        </div>
+        <p class="text-muted mb-2">Begleiter schließen sich dir nach abgeschlossenen Meilensteinen und Dungeons an.</p>
+        <div id="companions-list"></div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         6. BEREICH: EINSTELLUNGEN & BACKUP
+         ====================================================================== -->
+    <section id="view-settings" class="view-section" aria-label="Einstellungen und Datensicherung">
+      
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">PROFIL</span>
+            <h2 class="card-title">System-Einstellungen</h2>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-settings-name">Dein Name / Rufname</label>
+          <input type="text" id="input-settings-name" placeholder="Dein Name">
+        </div>
+
+        <div class="form-group">
+          <label for="select-settings-recovery">Modus für Gesundheit &amp; Alltag</label>
+          <select id="select-settings-recovery">
+            <option value="normal">Standard-Modus (Reguläres Training)</option>
+            <option value="recovery">Wiedereinstiegsmodus (Krankheit, Verletzung, wenig Zeit)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Backup & Wiederherstellung -->
+      <div class="sys-card">
+        <div class="card-header">
+          <div>
+            <span class="sys-label">DATENTRESOR</span>
+            <h2 class="card-title">Backup &amp; Wiederherstellung</h2>
+          </div>
+        </div>
+        <p class="text-muted mb-2">Alle Daten werden lokal auf deinem Smartphone gespeichert. Erstelle regelmäßig ein Backup als JSON-Datei.</p>
+
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary" id="btn-export-backup">
+            &#8681; Backup erstellen (JSON)
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-trigger-import">
+            &#8679; Backup wiederherstellen
+          </button>
+          <input type="file" id="input-import-file" accept=".json,application/json" style="display: none;">
+        </div>
+
+        <div class="divider"></div>
+
+        <button type="button" class="btn btn-danger" id="btn-reset-all-data">
+          Alle Daten unwiderruflich löschen
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL FÜR LEVEL-UP & SYSTEMNACHRICHTEN
+       ======================================================================== -->
+  <div class="modal-backdrop" id="sys-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-window">
+      <span class="sys-label" id="modal-tag">SYSTEMMELDUNG</span>
+      <h3 class="card-title mt-2" id="modal-title">Aufstieg!</h3>
+      <p class="text-muted mt-2" id="modal-body"></p>
+      <button type="button" class="btn btn-primary mt-3" id="btn-modal-close">Bestätigen</button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       UNTERE NAVIGATION (5 HAUPTBEREICHE)
+       ======================================================================== -->
+  <nav class="bottom-nav" aria-label="Hauptnavigation">
+    <button type="button" class="nav-btn active" data-target="view-system">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>System</span>
+    </button>
+    <button type="button" class="nav-btn" data-target="view-training">
+      <svg viewBox="0 0 24 24"><path d="M6 5v14M18 5v14M2 9v6M22 9v6M6 12h12"/></svg>
+      <span>Training</span>
+    </button>
+    <button type="button" class="nav-btn" data-target="view-plan">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      <span>Plan</span>
+    </button>
+    <button type="button" class="nav-btn" data-target="view-history">
+      <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Verlauf</span>
+    </button>
+    <button type="button" class="nav-btn" data-target="view-adventure">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span>Abenteuer</span>
+    </button>
+  </nav>
+
+  <!-- ========================================================================
+       JAVASCRIPT: LOGIK, AUTOMATISCHES SPEICHERN & SPIELMECHANIK
+       ======================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      const STORAGE_KEY = 'ARISE_PERSONAL_FITNESS_V1';
+      let debounceTimer = null;
+      let toastTimeout = null;
+      let restTimerInterval = null;
+
+      /* ----------------------------------------------------------------------
+         1. STANDARD-DATENSTRUKTUR (wird beim ersten Start geladen)
+         ---------------------------------------------------------------------- */
+      function getDefaultState() {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        return {
+          profile: {
+            name: 'Maisam',
+            xp: 0,
+            level: 1,
+            playerClass: 'Allrounder',
+            activeTitle: 'Erste Schritte',
+            unlockedTitles: ['Erste Schritte', 'Beständig', 'Rückkehrer', 'Chronist']
+          },
+          settings: {
+            recoveryMode: false
+          },
+          activePlanId: 'plan_ppl',
+          editingPlanId: null,
+          editingDayIndex: 0,
+          plans: [
+            {
+              id: 'plan_ppl',
+              name: 'Push / Pull / Legs',
+              type: 'Push Pull Legs',
+              days: [
+                { label: 'Tag 1: Push (Brust, Schulter, Trizeps)', exercises: ['Bankdrücken', 'Schrägbankdrücken', 'Schulterdrücken', 'Seitheben', 'Trizepsdrücken am Kabel'] },
+                { label: 'Tag 2: Pull (Rücken, hintere Schulter, Bizeps)', exercises: ['Klimmzüge / Latzug', 'Langhantelrudern', 'Rudern am Kabel', 'Face Pulls', 'Bizeps Curls'] },
+                { label: 'Tag 3: Legs (Beine & Rumpf)', exercises: ['Kniebeugen / Beinpresse', 'Rumänisches Kreuzheben', 'Beinstrecker', 'Beinbeuger', 'Wadenheben'] }
+              ]
+            },
+            {
+              id: 'plan_gk',
+              name: 'Ganzkörper Fundament',
+              type: 'Ganzkörper',
+              days: [
+                { label: 'Tag A: Ganzkörper Fokus', exercises: ['Kniebeugen', 'Bankdrücken', 'Klimmzüge / Latzug', 'Schulterdrücken', 'Plank / Rumpf'] },
+                { label: 'Tag B: Ganzkörper Fokus', exercises: ['Rumänisches Kreuzheben', 'Schrägbankdrücken', 'Rudern', 'Seitheben', 'Beinheben'] }
+              ]
+            }
+          ],
+          currentDraft: {
+            draftId: 'draft_' + Date.now(),
+            note: 'Push Einheit',
+            selectedExercise: 'Bankdrücken',
+            customExercise: '',
+            weight: 40,
+            reps: 10,
+            setsCount: 1,
+            sets: []
+          },
+          workouts: [],
+          completedWorkoutIds: [],
+          dailyQuests: {
+            date: todayStr,
+            items: [
+              { id: 'q1', title: 'Bewegung oder geplantes Training absolvieren', easyTitle: '10 Minuten lockeres Dehnen oder Spaziergang', xp: 25, status: 'open' },
+              { id: 'q2', title: 'Ausreichend Wasser trinken (mind. 2,5 Liter)', easyTitle: 'Ein großes Glas Wasser direkt trinken', xp: 25, status: 'open' },
+              { id: 'q3', title: 'Proteinreiche Mahlzeit & Erholung sichern', easyTitle: 'Eine ausgewogene Mahlzeit in Ruhe essen', xp: 25, status: 'open' }
+            ]
+          },
+          dungeons: [
+            { id: 'd_found', name: 'Gewölbe der Beständigkeit (4 Wochen)', desc: 'Schließe 12 Trainingseinheiten in deinem eigenen Tempo ab.', requiredWorkouts: 12, progress: 0, xpReward: 300, active: true, completed: false },
+            { id: 'd_iron', name: 'Zitadelle der Grundkraft (6 Wochen)', desc: 'Schließe 18 Trainingseinheiten ab und baue ein solides Fundament.', requiredWorkouts: 18, progress: 0, xpReward: 500, active: false, completed: false },
+            { id: 'd_zenith', name: 'Pfad des Aufsteigenden (8 Wochen)', desc: 'Schließe 24 Trainingseinheiten für langfristige Meisterschaft ab.', requiredWorkouts: 24, progress: 0, xpReward: 800, active: false, completed: false }
+          ],
+          companions: [
+            { id: 'c_wolf', name: 'Äther-Wolf „Kuro“', role: 'Wächter der Disziplin', requirementText: 'Freigeschaltet ab dem 1. abgeschlossenen Workout', unlocked: false },
+            { id: 'c_falcon', name: 'Sturmfalke „Veyra“', role: 'Späher der Ausdauer', requirementText: 'Freigeschaltet ab 5 abgeschlossenen Workouts', unlocked: false },
+            { id: 'c_golem', name: 'Runen-Wächter „Titan“', role: 'Schild der Beständigkeit', requirementText: 'Freigeschaltet ab 12 abgeschlossenen Workouts oder 1 Dungeon', unlocked: false },
+            { id: 'c_drake', name: 'Astral-Drache „Ignis“', role: 'Meister des Gipfels', requirementText: 'Freigeschaltet ab Level 10', unlocked: false }
+          ],
+          timer: {
+            duration: 90,
+            remaining: 90,
+            running: false
+          }
+        };
+      }
+
+      let state = loadState();
+
+      /* ----------------------------------------------------------------------
+         2. SICHERES LADEN & SPEICHERN MIT TRY/CATCH & DEBOUNCE (400ms)
+         ---------------------------------------------------------------------- */
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return getDefaultState();
+          const parsed = JSON.parse(raw);
+          const def = getDefaultState();
+
+          // Sanftes Zusammenführen, damit bei Updates nie Felder fehlen
+          const merged = Object.assign({}, def, parsed);
+          merged.profile = Object.assign({}, def.profile, parsed.profile || {});
+          merged.settings = Object.assign({}, def.settings, parsed.settings || {});
+          merged.currentDraft = Object.assign({}, def.currentDraft, parsed.currentDraft || {});
+          merged.timer = Object.assign({}, def.timer, parsed.timer || { duration: 90, remaining: 90, running: false });
+          merged.timer.running = false; // Timer beim Neuladen pausieren
+
+          // Prüfen, ob ein neuer Kalendertag für die Tagesquests angebrochen ist
+          const todayStr = new Date().toISOString().slice(0, 10);
+          if (!merged.dailyQuests || merged.dailyQuests.date !== todayStr) {
+            merged.dailyQuests = def.dailyQuests;
+          }
+          return merged;
+        } catch (err) {
+          console.error('Fehler beim Laden aus localStorage, Standardzustand wird genutzt:', err);
+          return getDefaultState();
+        }
+      }
+
+      function saveStateImmediate() {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+          debounceTimer = null;
+        }
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          showSavedIndicator();
+        } catch (err) {
+          console.error('Speicherfehler:', err);
+        }
+      }
+
+      function saveStateDebounced() {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+          saveStateImmediate();
+        }, 400);
+      }
+
+      function showSavedIndicator() {
+        const el = document.getElementById('save-indicator');
+        if (!el) return;
+        el.classList.add('visible');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(function () {
+          el.classList.remove('visible');
+        }, 1600);
+      }
+
+      /* ----------------------------------------------------------------------
+         3. LEVEL-, RANG- & BELOHNUNGSSYSTEM
+         ---------------------------------------------------------------------- */
+      function getXpNeededForLevel(lvl) {
+        return lvl * 200;
+      }
+
+      function getRankForLevel(lvl) {
+        if (lvl >= 15) return 'Großmeister';
+        if (lvl >= 10) return 'Elite';
+        if (lvl >= 6) return 'Beständiger';
+        if (lvl >= 3) return 'Aufsteigender';
+        return 'Einsteiger';
+      }
+
+      function awardXp(amount, reasonText) {
+        if (!amount || amount <= 0) return;
+        state.profile.xp += amount;
+        let leveledUp = false;
+
+        while (state.profile.xp >= getXpNeededForLevel(state.profile.level)) {
+          state.profile.xp -= getXpNeededForLevel(state.profile.level);
+          state.profile.level += 1;
+          leveledUp = true;
+        }
+
+        checkUnlocks();
+        saveStateImmediate();
+        renderAll();
+
+        if (leveledUp) {
+          showSystemModal(
+            'LEVEL AUFSTIEG!',
+            'Du hast Level ' + state.profile.level + ' erreicht (' + getRankForLevel(state.profile.level) + '). ' + (reasonText || '')
+          );
+        }
+      }
+
+      function checkUnlocks() {
+        const count = state.workouts.length;
+        const lvl = state.profile.level;
+        const anyDungeonDone = state.dungeons.some(function (d) { return d.completed; });
+
+        // Begleiter prüfen
+        state.companions.forEach(function (comp) {
+          if (comp.id === 'c_wolf' && count >= 1) comp.unlocked = true;
+          if (comp.id === 'c_falcon' && count >= 5) comp.unlocked = true;
+          if (comp.id === 'c_golem' && (count >= 12 || anyDungeonDone)) comp.unlocked = true;
+          if (comp.id === 'c_drake' && lvl >= 10) comp.unlocked = true;
+        });
+
+        // Zusätzliche Titel freischalten
+        const titles = state.profile.unlockedTitles;
+        if (count >= 5 && !titles.includes('Eiserner Wille')) titles.push('Eiserner Wille');
+        if (count >= 15 && !titles.includes('Unaufhaltsam')) titles.push('Unaufhaltsam');
+        if (anyDungeonDone && !titles.includes('Dungeon-Bezwinger')) titles.push('Dungeon-Bezwinger');
+      }
+
+      function showSystemModal(title, bodyText) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').textContent = bodyText;
+        document.getElementById('sys-modal').classList.add('open');
+      }
+
+      /* ----------------------------------------------------------------------
+         4. HILFSFUNKTIONEN FÜR DATUM & LETZTE LEISTUNG
+         ---------------------------------------------------------------------- */
+      function formatDateTime(isoString) {
+        try {
+          const d = new Date(isoString);
+          return d.toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          return isoString;
+        }
+      }
+
+      function getActiveExerciseName() {
+        const custom = (state.currentDraft.customExercise || '').trim();
+        if (custom.length > 0) return custom;
+        return state.currentDraft.selectedExercise || 'Bankdrücken';
+      }
+
+      function getLastPerformanceForExercise(exName) {
+        const normalized = exName.trim().toLowerCase();
+        for (let i = 0; i < state.workouts.length; i++) {
+          const w = state.workouts[i];
+          const matchingSets = (w.sets || []).filter(function (s) {
+            return (s.exercise || '').trim().toLowerCase() === normalized;
+          });
+          if (matchingSets.length > 0) {
+            const bestSet = matchingSets.reduce(function (best, cur) {
+              return (cur.weight * cur.reps > best.weight * best.reps) ? cur : best;
+            }, matchingSets[0]);
+            return bestSet.weight + ' kg × ' + bestSet.reps + ' Wdh. (' + matchingSets.length + ' Sätze am ' + formatDateTime(w.date) + ')';
+          }
+        }
+        return 'Noch keine gespeicherte Leistung für „' + exName + '“';
+      }
+
+      /* ----------------------------------------------------------------------
+         5. RENDERING DER OBERFLÄCHE
+         ---------------------------------------------------------------------- */
+      function renderAll() {
+        renderSystemView();
+        renderTrainingView();
+        renderPlanView();
+        renderHistoryView();
+        renderAdventureView();
+        renderSettingsView();
+      }
+
+      /* --- 5.1 System-Startseite rendern --- */
+      function renderSystemView() {
+        const p = state.profile;
+        const needed = getXpNeededForLevel(p.level);
+        const rank = getRankForLevel(p.level);
+        const pct = Math.min(100, Math.round((p.xp / needed) * 100));
+
+        document.getElementById('sys-player-name').textContent = p.name || 'Jäger';
+        document.getElementById('sys-level-badge').textContent = 'LEVEL ' + p.level;
+        document.getElementById('header-rank-display').textContent = 'RANG: ' + rank.toUpperCase();
+        document.getElementById('sys-rank').textContent = rank;
+        document.getElementById('sys-class').textContent = p.playerClass;
+        document.getElementById('sys-title').textContent = p.activeTitle;
+        document.getElementById('sys-total-workouts').textContent = String(state.workouts.length);
+        document.getElementById('sys-xp-text').textContent = p.xp + ' / ' + needed + ' XP (' + pct + '%)';
+        document.getElementById('sys-xp-bar').style.width = pct + '%';
+
+        // Wiedereinstiegsmodus-Hinweis
+        const recBanner = document.getElementById('recovery-banner');
+        const welcomeEl = document.getElementById('sys-welcome-msg');
+        if (state.settings.recoveryMode) {
+          recBanner.style.display = 'block';
+          welcomeEl.textContent = 'Schön, dass du da bist. Im Wiedereinstiegsmodus zählt jede sanfte Bewegung.';
+        } else {
+          recBanner.style.display = 'none';
+          welcomeEl.textContent = 'System bereit, ' + (p.name || 'Jäger') + '. Schritt für Schritt zum nächsten Level.';
+        }
+
+        // Geplante Trainingseinheit anzeigen
+        const activePlan = state.plans.find(function (pl) { return pl.id === state.activePlanId; }) || state.plans[0];
+        const titleEl = document.getElementById('sys-today-plan-title');
+        const badgeEl = document.getElementById('sys-today-day-badge');
+        const previewEl = document.getElementById('sys-today-exercises-preview');
+
+        if (activePlan && activePlan.days.length > 0) {
+          const dayIdx = state.workouts.length % activePlan.days.length;
+          const todayDay = activePlan.days[dayIdx];
+          titleEl.textContent = activePlan.name + ' — ' + todayDay.label;
+          badgeEl.textContent = activePlan.type;
+          previewEl.textContent = 'Geplante Übungen: ' + (todayDay.exercises.join(', ') || 'Keine Übungen hinterlegt');
+        } else {
+          titleEl.textContent = 'Freies Training';
+          badgeEl.textContent = 'Flexibel';
+          previewEl.textContent = 'Erstelle einen Trainingsplan oder starte direkt ein freies Workout.';
+        }
+
+        // Tagesquests rendern
+        const qList = document.getElementById('daily-quests-list');
+        qList.innerHTML = '';
+        state.dailyQuests.items.forEach(function (q) {
+          const div = document.createElement('div');
+          div.className = 'quest-item' + (q.status === 'done' ? ' done' : '');
+
+          const displayTitle = (state.settings.recoveryMode || q.simplified) ? q.easyTitle : q.title;
+          let statusBadge = '<span class="badge">+' + q.xp + ' XP</span>';
+          if (q.status === 'done') statusBadge = '<span class="badge badge-success">Erledigt ✓</span>';
+          if (q.status === 'paused') statusBadge = '<span class="badge badge-warn">Pausiert / Verschoben</span>';
+
+          div.innerHTML =
+            '<div class="quest-top">' +
+              '<span class="quest-title">' + escapeHtml(displayTitle) + '</span>' +
+              statusBadge +
+            '</div>';
+
+          if (q.status !== 'done') {
+            const actions = document.createElement('div');
+            actions.className = 'quest-actions';
+
+            const btnDone = document.createElement('button');
+            btnDone.type = 'button';
+            btnDone.className = 'btn btn-success btn-sm';
+            btnDone.textContent = 'Erledigen';
+            btnDone.addEventListener('click', function () {
+              q.status = 'done';
+              awardXp(q.xp, 'Tagesaufgabe abgeschlossen!');
+            });
+
+            const btnEasy = document.createElement('button');
+            btnEasy.type = 'button';
+            btnEasy.className = 'btn btn-secondary btn-sm';
+            btnEasy.textContent = q.simplified ? 'Standard-Variante' : 'Leichtere Variante';
+            btnEasy.addEventListener('click', function () {
+              q.simplified = !q.simplified;
+              q.status = 'open';
+              saveStateImmediate();
+              renderSystemView();
+            });
+
+            const btnPause = document.createElement('button');
+            btnPause.type = 'button';
+            btnPause.className = 'btn btn-secondary btn-sm';
+            btnPause.textContent = q.status === 'paused' ? 'Fortsetzen' : 'Pausieren';
+            btnPause.addEventListener('click', function () {
+              q.status = q.status === 'paused' ? 'open' : 'paused';
+              saveStateImmediate();
+              renderSystemView();
+            });
+
+            actions.appendChild(btnDone);
+            actions.appendChild(btnEasy);
+            actions.appendChild(btnPause);
+            div.appendChild(actions);
+          }
+
+          qList.appendChild(div);
+        });
+      }
+
+      /* --- 5.2 Trainings-Ansicht rendern --- */
+      function renderTrainingView() {
+        const d = state.currentDraft;
+        document.getElementById('input-workout-note').value = d.note || '';
+        document.getElementById('input-custom-exercise').value = d.customExercise || '';
+        document.getElementById('input-weight').value = d.weight;
+        document.getElementById('input-reps').value = d.reps;
+        document.getElementById('input-sets-count').value = d.setsCount || 1;
+        document.getElementById('workout-sets-counter').textContent = d.sets.length + ' Sätze';
+
+        // Alle bekannten Übungen aus Plänen + Standardübungen zusammentragen
+        const exSet = new Set(['Bankdrücken', 'Schrägbankdrücken', 'Klimmzüge / Latzug', 'Langhantelrudern', 'Schulterdrücken', 'Seitheben', 'Kniebeugen', 'Rumänisches Kreuzheben', 'Beinpresse', 'Bizeps Curls', 'Trizepsdrücken']);
+        state.plans.forEach(function (pl) {
+          pl.days.forEach(function (day) {
+            day.exercises.forEach(function (ex) { exSet.add(ex); });
+          });
+        });
+
+        const selectEl = document.getElementById('select-exercise');
+        selectEl.innerHTML = '';
+        Array.from(exSet).forEach(function (ex) {
+          const opt = document.createElement('option');
+          opt.value = ex;
+          opt.textContent = ex;
+          if (ex === d.selectedExercise) opt.selected = true;
+          selectEl.appendChild(opt);
+        });
+
+        // Letzte Leistung aktualisieren
+        const activeEx = getActiveExerciseName();
+        document.getElementById('last-performance-text').textContent = getLastPerformanceForExercise(activeEx);
+
+        // Aktuelle Sätze rendern
+        const listEl = document.getElementById('active-sets-list');
+        listEl.innerHTML = '';
+        if (d.sets.length === 0) {
+          listEl.innerHTML = '<p class="text-muted">Noch keine Sätze in dieser Sitzung gespeichert.</p>';
+        } else {
+          d.sets.forEach(function (s, idx) {
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            row.innerHTML =
+              '<div class="set-info"><strong>' + (idx + 1) + '. ' + escapeHtml(s.exercise) + '</strong> — ' + s.weight + ' kg × ' + s.reps + ' Wdh.</div>';
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn btn-danger btn-sm';
+            delBtn.textContent = '✕';
+            delBtn.setAttribute('aria-label', 'Satz löschen');
+            delBtn.addEventListener('click', function () {
+              d.sets.splice(idx, 1);
+              saveStateImmediate();
+              renderTrainingView();
+            });
+            row.appendChild(delBtn);
+            listEl.appendChild(row);
+          });
+        }
+
+        renderTimerDisplay();
+      }
+
+      /* --- 5.3 Trainingsplan-Ansicht rendern --- */
+      function renderPlanView() {
+        const container = document.getElementById('plans-container');
+        container.innerHTML = '';
+
+        state.plans.forEach(function (plan) {
+          const isActive = plan.id === state.activePlanId;
+          const card = document.createElement('div');
+          card.className = 'sys-card' + (isActive ? ' card-highlight' : '');
+
+          let daysHtml = '';
+          plan.days.forEach(function (d) {
+            daysHtml += '<div class="status-box mb-2">' +
+              '<span class="status-box-label">' + escapeHtml(d.label) + '</span>' +
+              '<div class="text-muted mt-2">' + (d.exercises.map(escapeHtml).join(' • ') || 'Keine Übungen') + '</div>' +
+            '</div>';
+          });
+
+          card.innerHTML =
+            '<div class="card-header">' +
+              '<div>' +
+                '<span class="sys-label">' + escapeHtml(plan.type) + '</span>' +
+                '<h3 class="card-title">' + escapeHtml(plan.name) + '</h3>' +
+              '</div>' +
+              (isActive ? '<span class="badge badge-success">Aktiv</span>' : '') +
+            '</div>' +
+            daysHtml;
+
+          const btnBar = document.createElement('div');
+          btnBar.className = 'btn-group mt-2';
+
+          if (!isActive) {
+            const btnActivate = document.createElement('button');
+            btnActivate.type = 'button';
+            btnActivate.className = 'btn btn-primary btn-sm';
+            btnActivate.textContent = 'Als aktiv setzen';
+            btnActivate.addEventListener('click', function () {
+              state.activePlanId = plan.id;
+              saveStateImmediate();
+              renderAll();
+            });
+            btnBar.appendChild(btnActivate);
+          }
+
+          const btnEdit = document.createElement('button');
+          btnEdit.type = 'button';
+          btnEdit.className = 'btn btn-secondary btn-sm';
+          btnEdit.textContent = 'Bearbeiten';
+          btnEdit.addEventListener('click', function () {
+            state.editingPlanId = plan.id;
+            state.editingDayIndex = 0;
+            saveStateImmediate();
+            renderPlanView();
+          });
+          btnBar.appendChild(btnEdit);
+
+          if (state.plans.length > 1) {
+            const btnDelete = document.createElement('button');
+            btnDelete.type = 'button';
+            btnDelete.className = 'btn btn-danger btn-sm';
+            btnDelete.textContent = 'Löschen';
+            btnDelete.addEventListener('click', function () {
+              if (confirm('Möchtest du den Plan „' + plan.name + '“ wirklich löschen?')) {
+                state.plans = state.plans.filter(function (p) { return p.id !== plan.id; });
+                if (state.activePlanId === plan.id && state.plans[0]) {
+                  state.activePlanId = state.plans[0].id;
+                }
+                if (state.editingPlanId === plan.id) {
+                  state.editingPlanId = null;
+                }
+                saveStateImmediate();
+                renderAll();
+              }
+            });
+            btnBar.appendChild(btnDelete);
+          }
+
+          card.appendChild(btnBar);
+          container.appendChild(card);
+        });
+
+        // Plan-Editor anzeigen, falls ein Plan ausgewählt wurde
+        const editorCard = document.getElementById('plan-editor-card');
+        const editPlan = state.plans.find(function (p) { return p.id === state.editingPlanId; });
+
+        if (!editPlan) {
+          editorCard.style.display = 'none';
+          return;
+        }
+
+        editorCard.style.display = 'block';
+        document.getElementById('input-plan-name').value = editPlan.name;
+
+        const daySelect = document.getElementById('select-plan-day');
+        daySelect.innerHTML = '';
+        editPlan.days.forEach(function (d, idx) {
+          const opt = document.createElement('option');
+          opt.value = String(idx);
+          opt.textContent = d.label;
+          if (idx === state.editingDayIndex) opt.selected = true;
+          daySelect.appendChild(opt);
+        });
+
+        const currentDay = editPlan.days[state.editingDayIndex] || editPlan.days[0];
+        document.getElementById('input-day-label').value = currentDay ? currentDay.label : '';
+
+        const exList = document.getElementById('plan-day-exercises-list');
+        exList.innerHTML = '';
+        if (currentDay && currentDay.exercises.length > 0) {
+          currentDay.exercises.forEach(function (ex, exIdx) {
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            row.innerHTML = '<span class="set-info">' + (exIdx + 1) + '. ' + escapeHtml(ex) + '</span>';
+
+            const controls = document.createElement('div');
+            controls.className = 'btn-group';
+
+            const btnUp = document.createElement('button');
+            btnUp.type = 'button';
+            btnUp.className = 'btn btn-secondary btn-sm';
+            btnUp.textContent = '↑';
+            btnUp.disabled = exIdx === 0;
+            btnUp.addEventListener('click', function () {
+              const temp = currentDay.exercises[exIdx - 1];
+              currentDay.exercises[exIdx - 1] = currentDay.exercises[exIdx];
+              currentDay.exercises[exIdx] = temp;
+              saveStateImmediate();
+              renderPlanView();
+            });
+
+            const btnDown = document.createElement('button');
+            btnDown.type = 'button';
+            btnDown.className = 'btn btn-secondary btn-sm';
+            btnDown.textContent = '↓';
+            btnDown.disabled = exIdx === currentDay.exercises.length - 1;
+            btnDown.addEventListener('click', function () {
+              const temp = currentDay.exercises[exIdx + 1];
+              currentDay.exercises[exIdx + 1] = currentDay.exercises[exIdx];
+              currentDay.exercises[exIdx] = temp;
+              saveStateImmediate();
+              renderPlanView();
+            });
+
+            const btnRem = document.createElement('button');
+            btnRem.type = 'button';
+            btnRem.className = 'btn btn-danger btn-sm';
+            btnRem.textContent = '✕';
+            btnRem.addEventListener('click', function () {
+              currentDay.exercises.splice(exIdx, 1);
+              saveStateImmediate();
+              renderPlanView();
+            });
+
+            controls.appendChild(btnUp);
+            controls.appendChild(btnDown);
+            controls.appendChild(btnRem);
+            row.appendChild(controls);
+            exList.appendChild(row);
+          });
+        } else {
+          exList.innerHTML = '<p class="text-muted">Noch keine Übungen für diesen Tag eingetragen.</p>';
+        }
+      }
+
+      /* --- 5.4 Verlauf & Persönliche Bestleistungen rendern --- */
+      function renderHistoryView() {
+        const prContainer = document.getElementById('pr-list-container');
+        const histContainer = document.getElementById('workout-history-container');
+        prContainer.innerHTML = '';
+        histContainer.innerHTML = '';
+
+        // Persönliche Rekorde pro Übung berechnen (höchstes bewegtes Gewicht)
+        const prMap = {};
+        state.workouts.forEach(function (w) {
+          (w.sets || []).forEach(function (s) {
+            const key = s.exercise.trim();
+            if (!prMap[key] || s.weight > prMap[key].weight || (s.weight === prMap[key].weight && s.reps > prMap[key].reps)) {
+              prMap[key] = { weight: s.weight, reps: s.reps, date: w.date };
+            }
+          });
+        });
+
+        const prKeys = Object.keys(prMap);
+        if (prKeys.length === 0) {
+          prContainer.innerHTML = '<p class="text-muted">Schließe dein erstes Training ab, um Bestleistungen aufzuzeichnen.</p>';
+        } else {
+          prKeys.forEach(function (exName) {
+            const rec = prMap[exName];
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            row.innerHTML =
+              '<div><strong>' + escapeHtml(exName) + '</strong><br><span class="text-muted">' + formatDateTime(rec.date) + '</span></div>' +
+              '<span class="badge">' + rec.weight + ' kg × ' + rec.reps + ' Wdh.</span>';
+            prContainer.appendChild(row);
+          });
+        }
+
+        // Chronik aller abgeschlossenen Workouts
+        if (state.workouts.length === 0) {
+          histContainer.innerHTML = '<p class="text-muted">Noch keine abgeschlossenen Workouts vorhanden.</p>';
+        } else {
+          state.workouts.forEach(function (w) {
+            const box = document.createElement('div');
+            box.className = 'quest-item';
+            const setsSummary = (w.sets || []).map(function (s) {
+              return escapeHtml(s.exercise) + ': ' + s.weight + 'kg × ' + s.reps;
+            }).join(' | ');
+
+            box.innerHTML =
+              '<div class="quest-top">' +
+                '<div>' +
+                  '<div class="quest-title">' + escapeHtml(w.note || 'Trainingseinheit') + '</div>' +
+                  '<span class="text-muted">' + formatDateTime(w.date) + '</span>' +
+                '</div>' +
+                '<span class="badge badge-success">+' + (w.xpEarned || 100) + ' XP</span>' +
+              '</div>' +
+              '<div class="text-muted">' + setsSummary + '</div>';
+            histContainer.appendChild(box);
+          });
+        }
+      }
+
+      /* --- 5.5 Abenteuer (Dungeons, Begleiter, Klasse & Titel) rendern --- */
+      function renderAdventureView() {
+        document.getElementById('select-player-class').value = state.profile.playerClass;
+
+        const titleSelect = document.getElementById('select-player-title');
+        titleSelect.innerHTML = '';
+        state.profile.unlockedTitles.forEach(function (t) {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          if (t === state.profile.activeTitle) opt.selected = true;
+          titleSelect.appendChild(opt);
+        });
+
+        // Dungeons
+        const dList = document.getElementById('dungeons-list');
+        dList.innerHTML = '';
+        state.dungeons.forEach(function (d) {
+          const pct = Math.min(100, Math.round((d.progress / d.requiredWorkouts) * 100));
+          const item = document.createElement('div');
+          item.className = 'quest-item' + (d.completed ? ' done' : '');
+
+          let badgeHtml = '<span class="badge">+' + d.xpReward + ' XP</span>';
+          if (d.completed) badgeHtml = '<span class="badge badge-success">Abgeschlossen ✓</span>';
+          else if (d.active) badgeHtml = '<span class="badge">Aktiv (' + d.progress + '/' + d.requiredWorkouts + ')</span>';
+
+          item.innerHTML =
+            '<div class="quest-top">' +
+              '<div class="quest-title">' + escapeHtml(d.name) + '</div>' +
+              badgeHtml +
+            '</div>' +
+            '<p class="text-muted">' + escapeHtml(d.desc) + '</p>' +
+            '<div class="xp-bar-bg"><div class="xp-bar-fill" style="width:' + pct + '%;"></div></div>';
+
+          if (!d.completed && !d.active) {
+            const btnAct = document.createElement('button');
+            btnAct.type = 'button';
+            btnAct.className = 'btn btn-secondary btn-sm mt-2';
+            btnAct.textContent = 'Diesen Dungeon aktivieren';
+            btnAct.addEventListener('click', function () {
+              state.dungeons.forEach(function (other) { other.active = false; });
+              d.active = true;
+              saveStateImmediate();
+              renderAdventureView();
+            });
+            item.appendChild(btnAct);
+          }
+
+          dList.appendChild(item);
+        });
+
+        // Begleiter
+        const cList = document.getElementById('companions-list');
+        cList.innerHTML = '';
+        state.companions.forEach(function (c) {
+          const item = document.createElement('div');
+          item.className = 'quest-item';
+          item.innerHTML =
+            '<div class="quest-top">' +
+              '<div>' +
+                '<div class="quest-title">' + escapeHtml(c.name) + '</div>' +
+                '<span class="text-muted">' + escapeHtml(c.role) + '</span>' +
+              '</div>' +
+              (c.unlocked
+                ? '<span class="badge badge-success">Freigeschaltet</span>'
+                : '<span class="badge badge-warn">Gesperrt</span>') +
+            '</div>' +
+            '<p class="text-muted">' + escapeHtml(c.requirementText) + '</p>';
+          cList.appendChild(item);
+        });
+      }
+
+      /* --- 5.6 Einstellungen rendern --- */
+      function renderSettingsView() {
+        document.getElementById('input-settings-name').value = state.profile.name || '';
+        document.getElementById('select-settings-recovery').value = state.settings.recoveryMode ? 'recovery' : 'normal';
+      }
+
+      /* ----------------------------------------------------------------------
+         6. PAUSEN-TIMER LOGIK
+         ---------------------------------------------------------------------- */
+      function renderTimerDisplay() {
+        const rem = state.timer.remaining;
+        const mins = String(Math.floor(rem / 60)).padStart(2, '0');
+        const secs = String(rem % 60).padStart(2, '0');
+        document.getElementById('timer-display').textContent = mins + ':' + secs;
+        const badge = document.getElementById('timer-status-badge');
+        if (state.timer.running) {
+          badge.textContent = 'Läuft ...';
+          badge.className = 'badge badge-warn';
+        } else if (rem === 0) {
+          badge.textContent = 'Pause beendet!';
+          badge.className = 'badge badge-success';
+        } else {
+          badge.textContent = 'Bereit';
+          badge.className = 'badge';
+        }
+      }
+
+      function startOrPauseTimer() {
+        if (state.timer.running) {
+          clearInterval(restTimerInterval);
+          state.timer.running = false;
+          renderTimerDisplay();
+          saveStateImmediate();
+          return;
+        }
+
+        if (state.timer.remaining <= 0) {
+          state.timer.remaining = state.timer.duration || 90;
+        }
+        state.timer.running = true;
+        renderTimerDisplay();
+
+        restTimerInterval = setInterval(function () {
+          if (state.timer.remaining > 0) {
+            state.timer.remaining -= 1;
+            renderTimerDisplay();
+          } else {
+            clearInterval(restTimerInterval);
+            state.timer.running = false;
+            renderTimerDisplay();
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          }
+        }, 1000);
+      }
+
+      /* ----------------------------------------------------------------------
+         7. NAVIGATION & EVENT-LISTENER
+         ---------------------------------------------------------------------- */
+      function switchView(targetId) {
+        document.querySelectorAll('.view-section').forEach(function (sec) {
+          sec.classList.toggle('active', sec.id === targetId);
+        });
+        document.querySelectorAll('.nav-btn').forEach(function (btn) {
+          btn.classList.toggle('active', btn.getAttribute('data-target') === targetId);
+        });
+        document.getElementById('btn-open-settings').classList.toggle('active', targetId === 'view-settings');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function setupEventListeners() {
+        // Untere Navigation
+        document.querySelectorAll('.nav-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const target = btn.getAttribute('data-target');
+            saveStateImmediate();
+            switchView(target);
+          });
+        });
+
+        // Zahnrad-Button oben rechts für Einstellungen
+        document.getElementById('btn-open-settings').addEventListener('click', function () {
+          saveStateImmediate();
+          switchView('view-settings');
+        });
+
+        // „Training starten“ Button auf dem Startbildschirm
+        document.getElementById('btn-hero-start-workout').addEventListener('click', function () {
+          const activePlan = state.plans.find(function (p) { return p.id === state.activePlanId; });
+          if (activePlan && activePlan.days.length > 0 && state.currentDraft.sets.length === 0) {
+            const dayIdx = state.workouts.length % activePlan.days.length;
+            const todayDay = activePlan.days[dayIdx];
+            state.currentDraft.note = todayDay.label;
+            if (todayDay.exercises[0]) {
+              state.currentDraft.selectedExercise = todayDay.exercises[0];
+            }
+          }
+          saveStateImmediate();
+          renderTrainingView();
+          switchView('view-training');
+        });
+
+        // Wiedereinstiegsmodus Schnell-Umschalter
+        document.getElementById('btn-toggle-recovery').addEventListener('click', function () {
+          state.settings.recoveryMode = !state.settings.recoveryMode;
+          saveStateImmediate();
+          renderAll();
+        });
+
+        // Automatisches Speichern beim Tippen (400ms Debounce) und sofort beim Verlassen (blur/change)
+        function bindAutoSaveInput(id, updateFn) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.addEventListener('input', function () {
+            updateFn(el.value);
+            saveStateDebounced();
+          });
+          el.addEventListener('blur', function () {
+            updateFn(el.value);
+            saveStateImmediate();
+          });
+          el.addEventListener('change', function () {
+            updateFn(el.value);
+            saveStateImmediate();
+          });
+        }
+
+        bindAutoSaveInput('input-workout-note', function (val) {
+          state.currentDraft.note = val;
+        });
+
+        bindAutoSaveInput('select-exercise', function (val) {
+          state.currentDraft.selectedExercise = val;
+          state.currentDraft.customExercise = '';
+          document.getElementById('input-custom-exercise').value = '';
+          document.getElementById('last-performance-text').textContent = getLastPerformanceForExercise(getActiveExerciseName());
+        });
+
+        bindAutoSaveInput('input-custom-exercise', function (val) {
+          state.currentDraft.customExercise = val;
+          document.getElementById('last-performance-text').textContent = getLastPerformanceForExercise(getActiveExerciseName());
+        });
+
+        bindAutoSaveInput('input-weight', function (val) {
+          const num = parseFloat(val);
+          state.currentDraft.weight = isNaN(num) || num < 0 ? 0 : num;
+        });
+
+        bindAutoSaveInput('input-reps', function (val) {
+          const num = parseInt(val, 10);
+          state.currentDraft.reps = isNaN(num) || num < 1 ? 1 : num;
+        });
+
+        bindAutoSaveInput('input-sets-count', function (val) {
+          const num = parseInt(val, 10);
+          state.currentDraft.setsCount = isNaN(num) || num < 1 ? 1 : Math.min(20, num);
+        });
+
+        // Stepper (+/-) Buttons für schnelle Bedienung mit einer Hand
+        document.querySelectorAll('.stepper-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const targetId = btn.getAttribute('data-step-target');
+            const delta = parseFloat(btn.getAttribute('data-step'));
+            const input = document.getElementById(targetId);
+            if (!input) return;
+            const currentVal = parseFloat(input.value) || 0;
+            const minVal = parseFloat(input.min) || 0;
+            const nextVal = Math.max(minVal, currentVal + delta);
+            input.value = nextVal;
+            input.dispatchEvent(new Event('change'));
+          });
+        });
+
+        // Satz speichern
+        document.getElementById('btn-add-set').addEventListener('click', function () {
+          const exName = getActiveExerciseName().trim();
+          const weight = parseFloat(document.getElementById('input-weight').value);
+          const reps = parseInt(document.getElementById('input-reps').value, 10);
+          const count = parseInt(document.getElementById('input-sets-count').value, 10) || 1;
+
+          if (!exName) {
+            alert('Bitte wähle oder tippe eine Übung ein.');
+            return;
+          }
+          if (isNaN(weight) || weight < 0 || isNaN(reps) || reps < 1) {
+            alert('Bitte gib ein gültiges Gewicht (>= 0) und gültige Wiederholungen (>= 1) ein.');
+            return;
+          }
+
+          for (let i = 0; i < count; i++) {
+            state.currentDraft.sets.push({
+              exercise: exName,
+              weight: weight,
+              reps: reps
+            });
+          }
+
+          state.currentDraft.setsCount = 1;
+          saveStateImmediate();
+          renderTrainingView();
+        });
+
+        // Aktuellen Entwurf leeren
+        document.getElementById('btn-clear-draft').addEventListener('click', function () {
+          if (state.currentDraft.sets.length === 0) return;
+          if (confirm('Möchtest du alle Sätze der aktuellen Sitzung verwerfen?')) {
+            state.currentDraft.sets = [];
+            state.currentDraft.draftId = 'draft_' + Date.now();
+            saveStateImmediate();
+            renderTrainingView();
+          }
+        });
+
+        // Trainingseinheit abschließen (mit Schutz vor doppelter XP-Vergabe)
+        document.getElementById('btn-finish-workout').addEventListener('click', function () {
+          const d = state.currentDraft;
+          if (!d.sets || d.sets.length === 0) {
+            alert('Füge mindestens einen Satz hinzu, bevor du das Training abschließt.');
+            return;
+          }
+
+          const workoutId = d.draftId || ('w_' + Date.now());
+          if (state.completedWorkoutIds.includes(workoutId)) {
+            alert('Dieses Training wurde bereits abgeschlossen und gutgeschrieben.');
+            return;
+          }
+
+          const xpEarned = 80 + (d.sets.length * 10);
+          const finishedWorkout = {
+            id: workoutId,
+            date: new Date().toISOString(),
+            note: (d.note || 'Trainingseinheit').trim(),
+            sets: d.sets.slice(),
+            xpEarned: xpEarned
+          };
+
+          state.workouts.unshift(finishedWorkout);
+          state.completedWorkoutIds.push(workoutId);
+
+          // Aktiven Dungeon fortschreiben
+          let dungeonBonusXp = 0;
+          let dungeonFinishedName = '';
+          state.dungeons.forEach(function (dg) {
+            if (dg.active && !dg.completed) {
+              dg.progress += 1;
+              if (dg.progress >= dg.requiredWorkouts) {
+                dg.completed = true;
+                dg.active = false;
+                dungeonBonusXp += dg.xpReward;
+                dungeonFinishedName = dg.name;
+              }
+            }
+          });
+
+          // Erste Tagesquest automatisch als erledigt markieren
+          if (state.dailyQuests.items[0] && state.dailyQuests.items[0].status !== 'done') {
+            state.dailyQuests.items[0].status = 'done';
+          }
+
+          // Neuen sauberen Entwurf für das nächste Training anlegen
+          state.currentDraft = {
+            draftId: 'draft_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            note: '',
+            selectedExercise: d.selectedExercise,
+            customExercise: '',
+            weight: d.weight,
+            reps: d.reps,
+            setsCount: 1,
+            sets: []
+          };
+
+          const totalXp = xpEarned + dungeonBonusXp;
+          awardXp(totalXp, 'Training gespeichert (+' + totalXp + ' XP)!');
+
+          if (dungeonFinishedName) {
+            showSystemModal('DUNGEON BEZWUNGEN!', 'Du hast „' + dungeonFinishedName + '“ abgeschlossen und +' + dungeonBonusXp + ' Bonus-XP erhalten!');
+          } else {
+            showSystemModal('TRAINING ABGESCHLOSSEN', 'Starke Leistung! Du hast ' + finishedWorkout.sets.length + ' Sätze protokolliert und +' + xpEarned + ' XP erhalten.');
+          }
+        });
+
+        // Pausen-Timer Buttons
+        document.querySelectorAll('[data-timer-set]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const secs = parseInt(btn.getAttribute('data-timer-set'), 10);
+            clearInterval(restTimerInterval);
+            state.timer.duration = secs;
+            state.timer.remaining = secs;
+            state.timer.running = false;
+            saveStateImmediate();
+            renderTimerDisplay();
+          });
+        });
+
+        document.getElementById('btn-timer-toggle').addEventListener('click', startOrPauseTimer);
+        document.getElementById('btn-timer-reset').addEventListener('click', function () {
+          clearInterval(restTimerInterval);
+          state.timer.running = false;
+          state.timer.remaining = state.timer.duration || 90;
+          saveStateImmediate();
+          renderTimerDisplay();
+        });
+
+        // Trainingsplan-Vorlagen erstellen
+        document.querySelectorAll('[data-template]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const tpl = btn.getAttribute('data-template');
+            const newId = 'plan_' + Date.now();
+            let newPlan = null;
+
+            if (tpl === 'gk') {
+              newPlan = {
+                id: newId,
+                name: 'Ganzkörper Plan',
+                type: 'Ganzkörper',
+                days: [
+                  { label: 'Ganzkörper A', exercises: ['Kniebeugen', 'Bankdrücken', 'Klimmzüge / Latzug', 'Schulterdrücken'] },
+                  { label: 'Ganzkörper B', exercises: ['Rumänisches Kreuzheben', 'Schrägbankdrücken', 'Rudern', 'Seitheben'] }
+                ]
+              };
+            } else if (tpl === 'ppl') {
+              newPlan = {
+                id: newId,
+                name: 'Push Pull Legs Split',
+                type: 'Push Pull Legs',
+                days: [
+                  { label: 'Push', exercises: ['Bankdrücken', 'Schulterdrücken', 'Seitheben', 'Trizepsdrücken'] },
+                  { label: 'Pull', exercises: ['Klimmzüge / Latzug', 'Rudern', 'Face Pulls', 'Bizeps Curls'] },
+                  { label: 'Legs', exercises: ['Kniebeugen', 'Rumänisches Kreuzheben', 'Beinstrecker', 'Wadenheben'] }
+                ]
+              };
+            } else {
+              newPlan = {
+                id: newId,
+                name: 'Eigener Trainingsplan',
+                type: 'Eigener Plan',
+                days: [
+                  { label: 'Tag 1', exercises: ['Bankdrücken', 'Klimmzüge / Latzug'] }
+                ]
+              };
+            }
+
+            state.plans.push(newPlan);
+            state.activePlanId = newId;
+            state.editingPlanId = newId;
+            state.editingDayIndex = 0;
+            saveStateImmediate();
+            renderAll();
+          });
+        });
+
+        // Plan-Editor Interaktionen
+        document.getElementById('btn-close-plan-editor').addEventListener('click', function () {
+          state.editingPlanId = null;
+          saveStateImmediate();
+          renderPlanView();
+        });
+
+        bindAutoSaveInput('input-plan-name', function (val) {
+          const p = state.plans.find(function (pl) { return pl.id === state.editingPlanId; });
+          if (p) {
+            p.name = val;
+            renderSystemView();
+          }
+        });
+
+        document.getElementById('select-plan-day').addEventListener('change', function (e) {
+          state.editingDayIndex = parseInt(e.target.value, 10) || 0;
+          saveStateImmediate();
+          renderPlanView();
+        });
+
+        bindAutoSaveInput('input-day-label', function (val) {
+          const p = state.plans.find(function (pl) { return pl.id === state.editingPlanId; });
+          if (p && p.days[state.editingDayIndex]) {
+            p.days[state.editingDayIndex].label = val;
+          }
+        });
+
+        document.getElementById('btn-add-plan-day').addEventListener('click', function () {
+          const p = state.plans.find(function (pl) { return pl.id === state.editingPlanId; });
+          if (!p) return;
+          p.days.push({ label: 'Tag ' + (p.days.length + 1), exercises: [] });
+          state.editingDayIndex = p.days.length - 1;
+          saveStateImmediate();
+          renderPlanView();
+        });
+
+        document.getElementById('btn-remove-plan-day').addEventListener('click', function () {
+          const p = state.plans.find(function (pl) { return pl.id === state.editingPlanId; });
+          if (!p || p.days.length <= 1) {
+            alert('Ein Plan muss mindestens einen Trainingstag enthalten.');
+            return;
+          }
+          p.days.splice(state.editingDayIndex, 1);
+          state.editingDayIndex = 0;
+          saveStateImmediate();
+          renderPlanView();
+        });
+
+        document.getElementById('btn-add-plan-exercise').addEventListener('click', function () {
+          const p = state.plans.find(function (pl) { return pl.id === state.editingPlanId; });
+          const input = document.getElementById('input-new-plan-exercise');
+          const exName = (input.value || '').trim();
+          if (!p || !exName) return;
+          p.days[state.editingDayIndex].exercises.push(exName);
+          input.value = '';
+          saveStateImmediate();
+          renderAll();
+        });
+
+        // Abenteuer: Klasse & Titel ändern
+        document.getElementById('select-player-class').addEventListener('change', function (e) {
+          state.profile.playerClass = e.target.value;
+          saveStateImmediate();
+          renderSystemView();
+        });
+
+        document.getElementById('select-player-title').addEventListener('change', function (e) {
+          state.profile.activeTitle = e.target.value;
+          saveStateImmediate();
+          renderSystemView();
+        });
+
+        // Einstellungen: Name & Wiedereinstiegsmodus
+        bindAutoSaveInput('input-settings-name', function (val) {
+          state.profile.name = val.trim() || 'Jäger';
+          renderSystemView();
+        });
+
+        document.getElementById('select-settings-recovery').addEventListener('change', function (e) {
+          state.settings.recoveryMode = (e.target.value === 'recovery');
+          saveStateImmediate();
+          renderAll();
+        });
+
+        // Backup exportieren (JSON-Download)
+        document.getElementById('btn-export-backup').addEventListener('click', function () {
+          saveStateImmediate();
+          const dataStr = JSON.stringify(state, null, 2);
+          const blob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const dateStamp = new Date().toISOString().slice(0, 10);
+          a.href = url;
+          a.download = 'arise-fitness-backup-' + dateStamp + '.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+
+        // Backup importieren (mit Bestätigung)
+        const fileInput = document.getElementById('input-import-file');
+        document.getElementById('btn-trigger-import').addEventListener('click', function () {
+          fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function (e) {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+
+          if (!confirm('Möchtest du das Backup wirklich importieren? Deine aktuellen Daten werden dadurch ersetzt.')) {
+            fileInput.value = '';
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = function (evt) {
+            try {
+              const imported = JSON.parse(evt.target.result);
+              if (!imported || typeof imported !== 'object' || !imported.profile) {
+                throw new Error('Ungültiges Backup-Format');
+              }
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+              state = loadState();
+              renderAll();
+              showSystemModal('BACKUP WIEDERHERGESTELLT', 'Alle Daten aus deiner JSON-Datei wurden erfolgreich geladen.');
+            } catch (err) {
+              alert('Fehler beim Importieren: Die Datei ist kein gültiges Arise-Backup.');
+            }
+            fileInput.value = '';
+          };
+          reader.readAsText(file);
+        });
+
+        // Alle Daten löschen (mit Sicherheitsbestätigung)
+        document.getElementById('btn-reset-all-data').addEventListener('click', function () {
+          if (confirm('WARNUNG: Möchtest du wirklich ALLE Trainingsdaten, Pläne und deinen Level-Fortschritt unwiderruflich löschen?')) {
+            localStorage.removeItem(STORAGE_KEY);
+            state = getDefaultState();
+            saveStateImmediate();
+            renderAll();
+            showSystemModal('SYSTEM ZURÜCKGESETZT', 'Alle Daten wurden gelöscht. Dein System startet wieder bei Level 1.');
+          }
+        });
+
+        // Modal schließen
+        document.getElementById('btn-modal-close').addEventListener('click', function () {
+          document.getElementById('sys-modal').classList.remove('open');
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      /* ----------------------------------------------------------------------
+         8. INITIALISIERUNG BEIM START
+         ---------------------------------------------------------------------- */
+      checkUnlocks();
+      setupEventListeners();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
